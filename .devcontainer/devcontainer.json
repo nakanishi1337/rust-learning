@@ -1,0 +1,50 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/rust
+{
+	"name": "Rust",
+	// ❶ 事前ビルドイメージではなく Dockerfile を使う
+	"dockerFile": "Dockerfile",
+
+	// "build": {
+	// "args": {
+	// 	"USER_UID": "${localEnv:UID}",
+	// 	"USER_GID": "${localEnv:GID}"
+	// }
+	// },
+
+	// そのほか既存設定はそのまま
+	// "mounts": [
+	// 	{
+	// 		"source": "devcontainer-cargo-cache-${devcontainerId}",
+	// 		"target": "/usr/local/cargo",
+	// 		"type": "volume"
+	// 	}
+	// ]
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+    // "postCreateCommand": "sudo apt-get update -qq && sudo apt-get install -y python3-pip && pip3 install --no-cache-dir tcconfig"
+
+	// Configure tool-specific properties.
+	// "customizations": {},
+	"settings": {
+		"terminal.integrated.defaultProfile.linux": "bash"
+	},
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	"remoteUser": "ubuntu",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"GitHub.copilot",
+				"rust-lang.rust-analyzer",
+				"mhutchie.git-graph"
+			]
+		}
+	}
+}

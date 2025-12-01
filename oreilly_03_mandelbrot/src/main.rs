@@ -1,5 +1,9 @@
-use num::Complex;
+use num::{Complex, traits::bounds};
 use std::str::FromStr;
+use image::ColorType;
+use image::png::PNGEncoder;
+use std::fs::File;
+use std::env;
 
 ///  マンデルブロ集合はzが発散しない複素数cの集合である。
 ///  半径2の円の外側に出たら発散すると知られていることから、zの絶対値の2乗が4を超えたら発散とみなす。
@@ -73,4 +77,93 @@ fn test_pixel_to_point() {
         ),
         Complex { re: -0.5, im: -0.5 }
     );
+}
+
+fn render(
+    pixels: &mut [u8],
+    bounds: (usize, usize),
+    upper_left: Complex<f64>,
+    lower_right: Complex<f64>,
+){
+    assert!(pixels.len() == bounds.0 * bounds.1);
+
+    for row in 0..bounds.1 {
+        for column in 0..bounds.0 {
+            let point = pixel_to_point(bounds, (column, row), upper_left, lower_right);
+            pixels[row * bounds.0 + column] = match complex_aquare_add_loop(point, 255) {
+                None => 0,
+                Some(count) => 255 - count as u8,
+            };
+        }
+    }
+}
+
+fn write_image(
+    filename: &str,
+    pixels: &[u8],
+    bounds: (usize, usize))
+    -> Result<(), std::io::Error> {
+        let output = File::create(filename)?;
+        let encoder = PNGEncoder::new(output);
+        encoder.encode(&pixels, bounds.0 as u32, bounds.1 as u32, ColorType::Gray(8))?;
+        Ok(())
+}
+
+fn _single_thread_mandelbrot(pixels: &mut [u8], bounds: (usize, usize), upper_left: Complex<f64>, lower_right: Complex<f64>){
+    render(pixels, bounds, upper_left, lower_right);
+}
+
+fn multi_thread_mandelbrot(pixels: &mut [u8], bounds: (usize, usize), upper_left: Complex<f64>, lower_right: Complex<f64>){
+    let threads = 8;
+    let rows_per_band = bounds.1 / threads + 1;
+
+    {
+        let bands : Vec<&mut [u8]> = pixels.chunks_mut(rows_per_band * bounds.0).collect();
+        crossbeam::scope(|spawner|
+            for (i, band) in bands.into_iter().enumerate(){
+                let top = i * rows_per_band;
+                let height = band.len() / bounds.0;
+                let band_bounds = (bounds.0, height);
+                let band_upper_left = pixel_to_point(
+                    bounds,
+                    (0, top),
+                    upper_left,
+                    lower_right,
+                );
+                let band_lower_right = pixel_to_point(
+                    bounds,
+                    (bounds.0, top + height),
+                    upper_left,
+                    lower_right,
+                );
+                spawner.spawn(move |_| {
+                    render(band, band_bounds, band_upper_left, band_lower_right);
+                });
+            }
+        ).unwrap();
+    }
+}
+
+///シングルスレッド版
+/// 実行例 
+/// cargo run mandel.png 4000x3000 -1.20,0.35 -1,0.20
+fn main() {
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() != 5 {
+        eprintln!("Usage: {} FILE PIXELS UPPERLEFT LOWERRIGHT\n", args[0]);
+        eprintln!("Example: {} mandelbrot.png 400x600 -2.0,1.0 1.0,-1.0", args[0]);
+        std::process::exit(1);
+    }
+
+    let bounds = parse_pair(&args[2], 'x').expect("error parsing image dimensions");
+    let upper_left = parse_complex(&args[3]).expect("error parsing upper left corner point");
+    let lower_right = parse_complex(&args[4]).expect("error parsing lower right corner point");
+
+    let mut pixels = vec![0; bounds.0 * bounds.1];
+
+    // _single_thread_mandelbrot(&mut pixels, bounds, upper_left, lower_right);
+    multi_thread_mandelbrot(&mut pixels, bounds, upper_left, lower_right);
+
+    write_image(&args[1], &pixels, bounds).expect("error writing PNG file");
 }

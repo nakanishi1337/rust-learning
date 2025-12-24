@@ -79,3 +79,14 @@ fn implicit_dereference_with_struct() {
     assert_eq!(person_ref.name, "Alice");
     assert_eq!(person_ref.age, 30);
 }
+
+#[test]
+fn comparison_operators_auto_dereference() {
+    let x = 5;
+    let y = 5;
+    let r = &x;
+    let s = &y;
+    
+    // 同じ型同士の比較では参照が自動解決される
+    assert!(r == s);      // &i32 と &i32 の比較
+}

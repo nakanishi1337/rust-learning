@@ -1,0 +1,9 @@
+mod a_difference_between_generics_and_trait_object;
+mod b_generic_and_type;
+mod c_generic_and_type_parameter;
+mod d_trait_for_someone_defied;
+mod e_type_associated_func;
+mod f_fully_qualified;
+mod g_associated_type;
+mod h_impl_trait;
+mod i_assciated_const;

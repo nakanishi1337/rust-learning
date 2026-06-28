@@ -1,6 +1,0 @@
-[package]
-name = "thebook_13_define_enum"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
